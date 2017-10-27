@@ -2,6 +2,8 @@
 
 Implementation APE-GAN (https://arxiv.org/pdf/1707.05474.pdf)
 
+![MNIST](https://github.com/owruby/APE-GAN/blob/master/MNIST.png)
+
 ## MNIST
 ### 1. Generate CNN and Adversarial Examples(FGSM)
 ```
