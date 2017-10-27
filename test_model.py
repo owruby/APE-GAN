@@ -13,8 +13,7 @@ from torchvision import transforms
 from tqdm import tqdm
 
 from models import CNN, Generator
-from generate_adv import fgsm
-from generate_adv import accuracy
+from utils import fgsm, accuracy
 
 
 def main(args):

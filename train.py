@@ -19,9 +19,14 @@ from models import Generator, Discriminator
 def show_images(e, x, x_adv, x_fake, save_dir):
     fig, axes = plt.subplots(3, 5, figsize=(10, 6))
     for i in range(5):
+        axes[0, i].axis("off"), axes[1, i].axis("off"), axes[2, i].axis("off")
         axes[0, i].imshow(x[i, 0].cpu().numpy(), cmap="gray")
+        axes[0, i].set_title("Normal")
         axes[1, i].imshow(x_adv[i, 0].cpu().numpy(), cmap="gray")
+        axes[1, i].set_title("Adv")
         axes[2, i].imshow(x_fake[i, 0].cpu().numpy(), cmap="gray")
+        axes[2, i].set_title("APE-GAN")
+    plt.axis("off")
     plt.savefig(os.path.join(save_dir, "result_{}.png".format(e)))
 
 
