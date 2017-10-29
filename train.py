@@ -20,11 +20,16 @@ def show_images(e, x, x_adv, x_fake, save_dir):
     fig, axes = plt.subplots(3, 5, figsize=(10, 6))
     for i in range(5):
         axes[0, i].axis("off"), axes[1, i].axis("off"), axes[2, i].axis("off")
-        axes[0, i].imshow(x[i, 0].cpu().numpy(), cmap="gray")
+        axes[0, i].imshow(x[i].cpu().numpy().transpose((1, 2, 0)))
+        # axes[0, i].imshow(x[i, 0].cpu().numpy(), cmap="gray")
         axes[0, i].set_title("Normal")
-        axes[1, i].imshow(x_adv[i, 0].cpu().numpy(), cmap="gray")
+
+        axes[1, i].imshow(x_adv[i].cpu().numpy().transpose((1, 2, 0)))
+        # axes[1, i].imshow(x_adv[i, 0].cpu().numpy(), cmap="gray")
         axes[1, i].set_title("Adv")
-        axes[2, i].imshow(x_fake[i, 0].cpu().numpy(), cmap="gray")
+
+        axes[2, i].imshow(x_fake[i].cpu().numpy().transpose((1, 2, 0)))
+        # axes[2, i].imshow(x_fake[i, 0].cpu().numpy(), cmap="gray")
         axes[2, i].set_title("APE-GAN")
     plt.axis("off")
     plt.savefig(os.path.join(save_dir, "result_{}.png".format(e)))
@@ -45,8 +50,10 @@ def main(args):
 
     train_data = TensorDataset(train_data["normal"], train_data["adv"])
     train_loader = torch.utils.data.DataLoader(train_data, batch_size=batch_size, shuffle=True)
-    G = Generator().cuda()
-    D = Discriminator().cuda()
+
+    in_ch = 1 if args.data == "mnist" else 3
+    G = Generator(in_ch).cuda()
+    D = Discriminator(in_ch).cuda()
 
     opt_G = optim.Adam(G.parameters(), lr=lr, betas=(0.5, 0.999))
     opt_D = optim.Adam(D.parameters(), lr=lr, betas=(0.5, 0.999))
@@ -103,6 +110,7 @@ def main(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
+    parser.add_argument("--data", type=str, default="mnist")
     parser.add_argument("--lr", type=float, default=0.0002)
     parser.add_argument("--epochs", type=int, default=2)
     parser.add_argument("--xi1", type=float, default=0.7)

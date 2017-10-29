@@ -15,23 +15,49 @@ from torchvision import transforms
 
 from tqdm import tqdm
 
-from models import CNN
+from models import MnistCNN, CifarCNN
 from utils import accuracy, fgsm
+
+
+def load_dataset(args):
+    if args.data == "mnist":
+        train_loader = torch.utils.data.DataLoader(
+            datasets.MNIST(os.path.expanduser("~/.torch/data/mnist"), train=True, download=True,
+                           transform=transforms.Compose([
+                               transforms.ToTensor()])),
+            batch_size=128, shuffle=True)
+        test_loader = torch.utils.data.DataLoader(
+            datasets.MNIST(os.path.expanduser("~/.torch/data/mnist"), train=False, download=False,
+                           transform=transforms.Compose([
+                               transforms.ToTensor()])),
+            batch_size=128, shuffle=False)
+    elif args.data == "cifar":
+        train_loader = torch.utils.data.DataLoader(
+            datasets.CIFAR10(os.path.expanduser("~/.torch/data/cifar10"), train=True, download=True,
+                             transform=transforms.Compose([
+                                 transforms.ToTensor()])),
+            batch_size=128, shuffle=True)
+        test_loader = torch.utils.data.DataLoader(
+            datasets.CIFAR10(os.path.expanduser("~/.torch/data/cifar10"), train=False, download=False,
+                             transform=transforms.Compose([
+                                 transforms.ToTensor()])),
+            batch_size=128, shuffle=False)
+    return train_loader, test_loader
+
+
+def load_cnn(args):
+    if args.data == "mnist":
+        return MnistCNN
+    elif args.data == "cifar":
+        return CifarCNN
 
 
 def main(args):
     print("Generating Model ...")
     print("-" * 30)
-    train_loader = torch.utils.data.DataLoader(
-        datasets.MNIST(os.path.expanduser("~/.torch/data/mnist"), train=True, download=True,
-                       transform=transforms.Compose([
-                           transforms.ToTensor()])),
-        batch_size=128, shuffle=True)
-    test_loader = torch.utils.data.DataLoader(
-        datasets.MNIST(os.path.expanduser("~/.torch/data/mnist"), train=False, download=False,
-                       transform=transforms.Compose([
-                           transforms.ToTensor()])),
-        batch_size=128, shuffle=False)
+
+    train_loader, test_loader = load_dataset(args)
+    CNN = load_cnn(args)
     model = CNN().cuda()
     cudnn.benchmark = True
 
@@ -96,11 +122,12 @@ def main(args):
 
     print("Accuracy(normal) {:.6f}, Accuracy(FGSM) {:.6f}".format(train_acc / train_n * 100, adv_acc / train_n * 100))
     torch.save({"normal": normal_data, "adv": adv_data}, "data.tar")
-    torch.save({"state_dict": model.state_dict()}, "mnist_model.tar")
+    torch.save({"state_dict": model.state_dict()}, "cnn.tar")
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
+    parser.add_argument("--data", type=str, default="mnist")
     parser.add_argument("--epochs", type=int, default=100)
     parser.add_argument("--lr", type=float, default=0.01)
     parser.add_argument("--milestones", type=list, default=[50, 75])

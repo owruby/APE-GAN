@@ -12,25 +12,48 @@ from torchvision import transforms
 
 from tqdm import tqdm
 
-from models import CNN, Generator
+from models import MnistCNN, CifarCNN, Generator
 from utils import fgsm, accuracy
+
+
+def load_dataset(args):
+    if args.data == "mnist":
+        test_loader = torch.utils.data.DataLoader(
+            datasets.MNIST(os.path.expanduser("~/.torch/data/mnist"), train=False, download=False,
+                           transform=transforms.Compose([
+                               transforms.ToTensor()])),
+            batch_size=128, shuffle=False)
+    elif args.data == "cifar":
+        test_loader = torch.utils.data.DataLoader(
+            datasets.CIFAR10(os.path.expanduser("~/.torch/data/cifar10"), train=False, download=False,
+                             transform=transforms.Compose([
+                                 transforms.ToTensor()])),
+            batch_size=128, shuffle=False)
+    return test_loader
+
+
+def load_cnn(args):
+    if args.data == "mnist":
+        return MnistCNN
+    elif args.data == "cifar":
+        return CifarCNN
 
 
 def main(args):
     eps = args.eps
-    test_loader = torch.utils.data.DataLoader(
-        datasets.MNIST(os.path.expanduser("~/.torch/data/mnist"), train=False, download=False,
-                       transform=transforms.Compose([
-                           transforms.ToTensor()])),
-        batch_size=128, shuffle=True)
+    test_loader = load_dataset(args)
 
-    model_point = torch.load("mnist_model.tar")
+    model_point = torch.load("cnn.tar")
     gan_point = torch.load(args.gan_path)
+
+    CNN = load_cnn(args)
 
     model = CNN().cuda()
     model.load_state_dict(model_point["state_dict"])
 
-    G = Generator().cuda()
+    in_ch = 1 if args.data == "mnist" else 3
+
+    G = Generator(in_ch).cuda()
     G.load_state_dict(gan_point["generator"])
     loss_cre = nn.CrossEntropyLoss().cuda()
 
@@ -58,6 +81,7 @@ def main(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
+    parser.add_argument("--data", type=str, default="mnist")
     parser.add_argument("--eps", type=float, default=0.15)
     parser.add_argument("--gan_path", type=str, default="./checkpoint/test/3.tar")
     args = parser.parse_args()
